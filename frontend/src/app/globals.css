@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 전체 배경 */
+body {
+  @apply bg-gray-100;
+}
