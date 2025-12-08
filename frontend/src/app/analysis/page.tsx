@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -21,6 +21,7 @@ type AnalysisData = {
   empathy: { expression: number; check: number; sufficiency: number };
   howWhat: { how: string; what: string; tip: string };
   insights: string[];
+  styleFeedback?: { summary?: string; suggestion?: string };
 };
 
 const defaultData: AnalysisData = {
@@ -32,11 +33,13 @@ const defaultData: AnalysisData = {
   ],
   sentiment: { pos: 60, neg: 15, neu: 25 },
   empathy: { expression: 4, check: 2, sufficiency: 40 },
-  howWhat: { how: "직설적이고 간결함", what: "구체적·명확", tip: "전달 속도를 조절하면 더 부드럽게 들릴 수 있어요." },
-  insights: [
-    "단정형 문장이 많아 단호하게 느껴질 수 있어요.",
-    "공감 표현을 조금 더 추가하면 부드러운 인상을 줄 수 있어요.",
-  ],
+  howWhat: {
+    how: "직설적이고 간결함",
+    what: "구체적·명확함",
+    tip: "전달 속도를 조금 조절하면 더 부드럽게 들릴 수 있어요",
+  },
+  insights: [],
+  styleFeedback: { summary: "", suggestion: "" },
 };
 
 const SENTIMENT_COLORS = {
@@ -52,7 +55,7 @@ export default function AnalysisPage() {
   const [data, setData] = useState<AnalysisData>(defaultData);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<TabKey>("tone");
+  const [activeTab, setActiveTab] = useState<TabKey>("style");
 
   useEffect(() => {
     const text = sessionStorage.getItem("analysis_chat");
@@ -76,16 +79,18 @@ export default function AnalysisPage() {
           sentiment: json.sentiment || defaultData.sentiment,
           empathy: json.empathy || defaultData.empathy,
           howWhat: json.howWhat || defaultData.howWhat,
-          insights: json.insights || defaultData.insights,
+          insights: json.insights || [],
+          styleFeedback: json.styleFeedback || defaultData.styleFeedback,
         });
       } catch (e: any) {
         console.error(e);
-        setError(e.message || "분석 중 오류가 발생했습니다.");
+        setError(e.message || "분석 처리 중 오류가 발생했습니다.");
         setData(defaultData);
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
   }, [router]);
 
@@ -97,14 +102,26 @@ export default function AnalysisPage() {
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: "emotion", label: "감정 분석" },
-    { key: "tone", label: "톤·어형" },
+    { key: "tone", label: "톤·어조" },
     { key: "style", label: "스타일" },
     { key: "relation", label: "관계 분석" },
     { key: "ai", label: "AI 미러링" },
   ];
 
+  const StyleFeedbackCard = () => {
+    const summary = data.styleFeedback?.summary?.trim();
+    const suggestion = data.styleFeedback?.suggestion?.trim();
+    if (!summary && !suggestion) return null;
+    return (
+      <div className="bg-orange-50 text-orange-700 text-xs rounded-lg p-3 border border-orange-100 space-y-1">
+        {summary && <div className="font-semibold">{summary}</div>}
+        {suggestion && <div className="text-[11px] text-orange-800">{suggestion}</div>}
+      </div>
+    );
+  };
+
   const renderContent = () => {
-    if (activeTab === "tone" || activeTab === "style") {
+    if (activeTab === "tone") {
       return (
         <>
           <section className="bg-white rounded-2xl shadow p-4 space-y-3">
@@ -120,11 +137,7 @@ export default function AnalysisPage() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            {data.insights[0] && (
-              <div className="bg-orange-50 text-orange-700 text-xs rounded-lg p-3 border border-orange-100">
-                {data.insights[0]}
-              </div>
-            )}
+            <StyleFeedbackCard />
           </section>
 
           <section className="bg-white rounded-2xl shadow p-4 space-y-3">
@@ -139,7 +152,7 @@ export default function AnalysisPage() {
                 <p className="text-xs mt-1 text-blue-700">{data.howWhat.what}</p>
               </div>
               <div className="bg-yellow-50 text-yellow-800 rounded-lg p-3 text-xs">
-                💡 {data.howWhat.tip}
+                TIP {data.howWhat.tip}
               </div>
             </div>
           </section>
@@ -147,9 +160,25 @@ export default function AnalysisPage() {
       );
     }
 
-    if (activeTab === "emotion") {
+    if (activeTab === "style") {
       return (
         <>
+          <section className="bg-white rounded-2xl shadow p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-900">문장 스타일 분석</h3>
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data.style}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="label" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="value" fill="#816BFF" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <StyleFeedbackCard />
+          </section>
+
           <section className="bg-white rounded-2xl shadow p-4 space-y-3">
             <h3 className="text-sm font-semibold text-gray-900">공감 표현 빈도</h3>
             <div className="grid grid-cols-2 gap-2 text-sm">
@@ -161,16 +190,14 @@ export default function AnalysisPage() {
               </div>
             </div>
             <div className="text-xs text-gray-600">
-              공감 표현 충분도: <span className="font-semibold">{data.empathy.sufficiency}%</span>
+              공감 표현 충분도 <span className="font-semibold">{data.empathy.sufficiency}%</span>
             </div>
             <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
-              <div className="h-full bg-[#816BFF]" style={{ width: `${Math.min(100, data.empathy.sufficiency)}%` }} />
+              <div
+                className="h-full bg-[#816BFF]"
+                style={{ width: `${Math.min(100, data.empathy.sufficiency)}%` }}
+              />
             </div>
-            {data.insights[1] && (
-              <div className="bg-blue-50 text-blue-700 text-xs rounded-lg p-3 border border-blue-100">
-                {data.insights[1]}
-              </div>
-            )}
           </section>
 
           <section className="bg-white rounded-2xl shadow p-4 space-y-3">
@@ -180,7 +207,10 @@ export default function AnalysisPage() {
                 <PieChart>
                   <Pie data={sentimentChartData} dataKey="value" nameKey="name" innerRadius={50} outerRadius={70}>
                     {sentimentChartData.map((entry) => (
-                      <Cell key={entry.name} fill={SENTIMENT_COLORS[entry.key as keyof typeof SENTIMENT_COLORS]} />
+                      <Cell
+                        key={entry.name}
+                        fill={SENTIMENT_COLORS[entry.key as keyof typeof SENTIMENT_COLORS]}
+                      />
                     ))}
                   </Pie>
                   <Tooltip />
@@ -202,14 +232,39 @@ export default function AnalysisPage() {
               </div>
             </div>
           </section>
+
+          <section className="bg-white rounded-2xl shadow p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-900">"HOW vs WHAT" 분석</h3>
+            <div className="space-y-2 text-sm">
+              <div className="bg-purple-50 text-purple-700 rounded-lg p-3">
+                <p className="font-semibold">전달 방식 (How)</p>
+                <p className="text-xs mt-1 text-purple-700">{data.howWhat.how}</p>
+              </div>
+              <div className="bg-blue-50 text-blue-700 rounded-lg p-3">
+                <p className="font-semibold">내용 (What)</p>
+                <p className="text-xs mt-1 text-blue-700">{data.howWhat.what}</p>
+              </div>
+              <div className="bg-yellow-50 text-yellow-800 rounded-lg p-3 text-xs">
+                TIP {data.howWhat.tip}
+              </div>
+            </div>
+          </section>
         </>
+      );
+    }
+
+    if (activeTab === "emotion") {
+      return (
+        <section className="bg-white rounded-2xl shadow p-4 text-sm text-gray-700">
+          감정 분석은 추후 제공될 예정입니다. 스타일 탭에서 분석 결과를 확인해주세요.
+        </section>
       );
     }
 
     if (activeTab === "relation") {
       return (
         <section className="bg-white rounded-2xl shadow p-4 text-sm text-gray-700">
-          관계 분석 리포트 준비 중입니다. 추가 데이터 업로드 후 생성됩니다.
+          관계 분석 리포트는 준비 중입니다. 업데이트 후 확인할 수 있어요.
         </section>
       );
     }
@@ -217,7 +272,7 @@ export default function AnalysisPage() {
     if (activeTab === "ai") {
       return (
         <section className="bg-white rounded-2xl shadow p-4 text-sm text-gray-700">
-          AI 미러링 분석 리포트가 곧 제공될 예정입니다.
+          AI 미러링 분석은 곧 추가될 예정입니다.
         </section>
       );
     }
@@ -239,7 +294,7 @@ export default function AnalysisPage() {
 
         <section className="bg-white rounded-2xl shadow p-4 space-y-1">
           <div className="flex items-center gap-2 text-gray-800 font-semibold">
-            <span className="text-xl">💬</span>
+            <span className="text-xl">MSG</span>
             <span>MirrorMe AI 피드백 대시보드</span>
           </div>
           <p className="text-xs text-gray-500">AI 기반 음성·감정·톤 종합 분석 리포트</p>
