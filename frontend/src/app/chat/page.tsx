@@ -1,30 +1,17 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 
 export default function Home() {
   const [messages, setMessages] = useState<any[]>([]);
-  const [fileName, setFileName] = useState("");
   const [userName, setUserName] = useState("");
   const [isReady, setIsReady] = useState(false);
 
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [input, setInput] = useState("");
-
-  // -------------------------
-  // 1) 파일 업로드
-  // -------------------------
-  const handleFileUpload = async (e: any) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setFileName(file.name);
-
-    const text = await file.text();
-    sessionStorage.setItem("full_chat", text);
-
-    alert("대화 파일을 업로드했습니다. 이제 이름을 입력하세요.");
-  };
+  const [hasUploaded, setHasUploaded] = useState(false);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  
 
   // -------------------------
   // 2) 이름 입력 → 말투 분석 프롬프트 생성
@@ -55,48 +42,72 @@ export default function Home() {
     const styleText = userLines.join("\n");
 
     const tonePrompt = `
-당신은 지금부터 "${userName}"의 말투를 완벽하게 모방하는 AI입니다.
+당신은 지금부터 "${userName}"의 말투만 사용하는 AI다.
+아래 대화 데이터는 "${userName}"의 실제 말투이며, 
+이 데이터에서 벗어난 말투, 단어, 태도, 문체는 단 1회도 생성할 수 없다.
 
-아래는 "${userName}"이 실제로 카카오톡에서 작성한 대화 데이터입니다.
-이 사람의 말투, 문장 길이, 감정 표현, 말버릇, 자주 쓰는 단어, 띄어쓰기 습관, 구어체 패턴을 매우 정밀하게 분석하십시오.
+어떤 정보 제공, 설명, 도움 행위도 할 수 없다.
+오직 "${userName}"처럼 말하는 것만 허용된다.
 
 --- 대화 데이터 ---
 ${styleText}
 --- 끝 ---
 
-=
-다음 기준을 반드시 지키면서 답변하십시오:
 
-1) **문장 길이**
-- 평균 문장 길이를 그대로 유지하십시오.  
-- 이 사람이 짧게 말하면 짧게, 길게 말하면 길게 말하십시오.
+[말투 재현 원칙 — 절대적 규칙]
 
-2) **문체**
-- 말투, 말버릇, 감탄사, 완곡한 표현, 반말/존댓말 여부, 장난스러운 표현까지 완전히 유지하십시오.
-- 문장 끝맺음 패턴까지 동일하게 하십시오.
+1) 말투 성향 완전 재현
+- 문장 길이, 문장 끊김, 단문/장문 비율, 말버릇, 자주 쓰는 단어, 감정 표현 빈도 등을 그대로 따른다.
+- 맞춤법 오류, 비문(문장 깨짐), 줄임 표현까지 그대로 허용하며 그대로 재현한다.
+- 데이터에 없는 리듬, 장난스러운 말투, 표현 패턴은 절대 생성하지 않는다.
 
-3) **단어 사용**
-- 이 사람이 자주 쓰는 단어/어구/감정표현을 우선적으로 사용하십시오.
-- 이 사람이 거의 쓰지 않는 단어는 사용하지 마십시오.
+2) 말투 외 요소 생성 절대 금지
+- 데이터에 등장하지 않은 표현, 말투, 신조어, 은어, 비유, 강조, 형용, 농담 등은 생성 불가.
+- 데이터에 없는 이모티콘, 새로운 웃음 패턴, 새로운 감정 표현도 생성 불가.
+- 데이터에 없는 영어 문장, 외래어, 의태어는 절대 금지.
 
-4) **이모티콘**
-- 이 사람이 실제로 자주 쓰는 이모티콘만 사용하십시오.
-- 사용하지 않는다면 절대 쓰지 마십시오.  
+3) 존댓말/반말 체계 자동 판별 및 고정
+- "${styleText}"에 등장한 종결형을 분석해 존댓말/반말 비율을 계산한다.
+- 존댓말 비율이 높으면 출력은 100% 존댓말이어야 한다.
+- 반말 비율이 높으면 출력은 100% 반말이어야 한다.
+- 두 말투의 혼합 사용은 금지된다. (데이터에 혼합 사용 패턴이 존재하는 경우만 예외적 허용)
 
-5) **논리 구성**
-- 대화 흐름이 이 사람의 스타일과 최대한 유사하도록 구성하십시오.
-- 문맥이 바뀌더라도 말투는 절대 변경하지 않습니다.
+4) 웃음·감정 표현 통제
+- "${userName}"이 실제 데이터에서 사용한 웃음 표현만 사용할 수 있다.
+- 데이터에서 사용된 최대 반복 길이만큼만 허용한다. 그 이상은 절대 불가.
+  (예: "ㅋㅋ"만 있다면 "ㅋㅋㅋㅋㅋ"은 절대 사용 불가)
+- 데이터에 없는 감정 표현(ㅎㅎㅎ, ㅠㅠㅠ 등)은 생성 금지.
 
-6) **절대 금지**
-- 설명하거나 장황한 메타 발언을 하지 않는다.  
-- “나는 AI인데~” 같은 말 금지  
-- “~할게요”, “~입니다” 형태의 GPT 기본 말투 금지  
-- 분석 과정 설명 금지  
-- 절대 다른 사람의 말투를 섞지 마십시오.
-- 채팅의 마지막에 역질문 형식의 말을 하지 마시오.
-- 웃긴 상황이 아닌데 'ㅋㅋㅋㅋ' 같은 웃음 표지를 굳이 넣지 마시오.
-- 웃을 만한 상황이면 'ㅋㅋㅋ' 같은 표현을 조금 써도 좋아요.
-- 말끝에 '너는 뭐 먹었어? 너는 뭐 할거야?' 같은 역질문을 절대 하지 마시오.
+5) 대화 흐름의 톤 및 태도 유지
+- "${userName}"이 말하는 방식 그대로 유지한다. (건조함/차분함/장난 없음 등)
+- GPT식 친절, 설명, 정중함, 체계적 안내는 절대 포함할 수 없다.
+- “궁금하신가요?”, “도와드릴게요”, “OO할 수 있습니다”와 같은 GPT 특유 문체 금지.
+
+6) 새로운 정보, 경험, 가치관 생성 금지
+- "${userName}"이 실제로 말한 내용 외에 새로운 취향, 기억, 사실, 설정을 만들어내지 않는다.
+- 데이터에 없는 자기소개, 성격 묘사, 경험담 등은 생성하지 않는다.
+
+7) 출력 형식
+- 출력은 지금 이 순간 "${userName}"이 카카오톡에 입력한 문장처럼 자연스러워야 한다.
+- 데이터에 존재하는 말투 패턴을 벗어나면 실패이다.
+
+
+[형태소 기반 말투 체계 선택 규칙 — 강화]
+
+A) 존댓말/반말 분석
+- “요/입니다/네요/세요” 등 존댓말 종결형의 등장 빈도와
+  “해/냐/다/ㄴ데” 등 반말 종결형의 등장 빈도를 분석한다.
+- 비율이 더 높은 체계를 출력 전체에서 강제 적용한다.
+
+B) 체계 강제
+- 선택된 말투 체계는 단 1문장이라도 어기면 안 된다.
+- 데이터에서 혼합 사용 빈도가 30% 이상일 경우에만 혼합 허용.
+
+C) 말투 창작 금지
+- 데이터에 없는 문장 종결형(예: ‘~임’, ‘~함’, ‘~하노’)은 절대 생성되지 않는다.
+
+
+이제부터 당신은 "${userName}"이다.
 
 
 `;
@@ -141,11 +152,31 @@ ${styleText}
     if (e.key === "Enter") sendMessage();
   };
 
+  // check for uploaded content on mount
+  useEffect(() => {
+    const raw = sessionStorage.getItem("full_chat");
+    setHasUploaded(Boolean(raw));
+
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "full_chat") setHasUploaded(Boolean(e.newValue));
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  // auto-scroll to bottom when messages change
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    // scroll to bottom
+    el.scrollTop = el.scrollHeight;
+  }, [messages]);
+
   // -------------------------
   // UI
   // -------------------------
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-white flex flex-col">
+    <div className="max-w-md mx-auto min-h-screen bg-white flex flex-col pb-20">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <div className="text-xl font-semibold">채팅</div>
@@ -155,17 +186,8 @@ ${styleText}
         </div>
       </div>
 
-      {/* File Upload & Name Setting */}
+      {/* Name Setting */}
       <div className="px-4 py-4 border-b space-y-3">
-        <input
-          type="file"
-          accept=".txt"
-          ref={fileInputRef}
-          onChange={handleFileUpload}
-          className="block text-sm text-gray-600"
-        />
-        {fileName && <p className="text-sm">업로드됨: {fileName}</p>}
-
         <div className="flex items-center gap-2">
           <input
             type="text"
@@ -184,7 +206,7 @@ ${styleText}
       </div>
 
       {/* Chat area */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-white">
+      <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-white">
         {messages
           .filter((m) => m.role !== "system")
           .map((msg, idx) => (
@@ -210,23 +232,30 @@ ${styleText}
           ))}
       </div>
 
-      {/* Input box */}
-      <div className="px-4 py-3 border-t bg-white flex items-center gap-3">
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKey}
-          placeholder="메시지를 입력하세요…"
-          className="flex-1 px-4 py-2 bg-gray-100 rounded-full text-sm outline-none"
-        />
+      {/* Input box: only show if a chat file was uploaded */}
+      {hasUploaded ? (
+        <div className="px-4 py-3 border-t bg-white flex items-center gap-3">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={handleKey}
+            placeholder="메시지를 입력하세요…"
+            className="flex-1 px-4 py-2 bg-gray-100 rounded-full text-sm outline-none"
+          />
 
-        <button
-          onClick={sendMessage}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-[#816BFF] text-white"
-        >
-          ➤
-        </button>
-      </div>
+          <button
+            onClick={sendMessage}
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-[#816BFF] text-white"
+          >
+            ➤
+          </button>
+        </div>
+      ) : (
+        <div className="px-4 py-6 border-t bg-white text-center text-sm text-gray-500">
+          대화 파일을 업로드하면 채팅 입력창이 표시됩니다. &nbsp;
+          <Link href="/chatlist/upload" className="text-violet-600 underline">업로드하러 가기</Link>
+        </div>
+      )}
     </div>
   );
 }
