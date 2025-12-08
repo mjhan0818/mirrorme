@@ -257,7 +257,7 @@ export default function AnalysisPage() {
 
         <section className="bg-white rounded-2xl shadow p-4 space-y-1">
           <div className="flex items-center gap-2 text-gray-800 font-semibold">
-            <span className="text-xl">MSG</span>
+            <img src="/icons/Chat_alt_2.png" alt="chat" className="w-5 h-5" />
             <span>MirrorMe AI 피드백 대시보드</span>
           </div>
           <p className="text-xs text-gray-500">AI 기반 음성·감정·톤 종합 분석 리포트</p>
@@ -293,3 +293,4 @@ export default function AnalysisPage() {
     </div>
   );
 }
+

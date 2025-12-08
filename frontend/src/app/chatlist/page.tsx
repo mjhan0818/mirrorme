@@ -26,7 +26,7 @@ export default function Home() {
       {/* Header */}
       <div className="w-full max-w-md flex items-center justify-between px-2 mb-8">
         <div className="flex items-center gap-2 text-xl font-bold">
-          🐱 <span>개인/친묵</span>
+          🐱 <span>개인/친목</span>
         </div>
         <div className="flex gap-4 text-gray-600 text-xl">
           <span>⚙️</span>
