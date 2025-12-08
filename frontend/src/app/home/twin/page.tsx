@@ -142,20 +142,21 @@ export default function TwinHome() {
                 { title: "비즈니스 모드 채팅/음성 피드백", desc: "채팅 기록/음성 피드를 바탕으로 리포트를 생성해요." },
                 { title: "비즈니스 모드 프레젠테이션 피드백", desc: "발표 음성 피드를 바탕으로 리포트를 생성해요." },
               ].map((item) => (
-                <div key={item.title} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-2">
-                  <div className="flex items-start justify-between">
-                    <div>
+                <button
+                  key={item.title}
+                  onClick={() => (window.location.href = "/analysis/upload")}
+                  className="w-full text-left bg-white rounded-2xl shadow-sm border border-gray-100 p-4 space-y-2 hover:border-violet-200 transition-colors"
+                >
+                  <div className="flex items-start">
+                    <div className="flex-1">
                       <p className="text-sm font-semibold text-gray-900">{item.title}</p>
                       <p className="text-xs text-gray-500 mt-1">{item.desc}</p>
                     </div>
-                    <button className="text-[11px] px-3 py-1 bg-gray-100 text-gray-600 rounded-full border border-gray-200">
-                      파일 선택
-                    </button>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-gray-500">
                     <span>데이터 업로드/입력 완료 시 자동으로 리포트가 생성돼요</span>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
