@@ -1,3 +1,6 @@
+import "./globals.css";
+
+
 export const metadata = {
   title: "MirrorMe Chat",
   description: "Persona-based Chatbot",
