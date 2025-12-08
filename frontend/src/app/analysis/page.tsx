@@ -19,7 +19,7 @@ type AnalysisData = {
   style: { label: string; value: number }[];
   sentiment: { pos: number; neg: number; neu: number };
   empathy: { expression: number; check: number; sufficiency: number };
-  howWhat: { how: string; what: string; tip: string };
+  howWhat: { howType: string; howNote: string; whatType: string; whatNote: string; tip: string };
   insights: string[];
   styleFeedback?: { summary?: string; suggestion?: string };
 };
@@ -34,8 +34,10 @@ const defaultData: AnalysisData = {
   sentiment: { pos: 60, neg: 15, neu: 25 },
   empathy: { expression: 4, check: 2, sufficiency: 40 },
   howWhat: {
-    how: "직설적이고 간결함",
-    what: "구체적·명확함",
+    howType: "직설형",
+    howNote: "전형적이지만 빠름",
+    whatType: "사실 중심형",
+    whatNote: "명확하고 직접적",
     tip: "전달 속도를 조금 조절하면 더 부드럽게 들릴 수 있어요",
   },
   insights: [],
@@ -120,44 +122,15 @@ export default function AnalysisPage() {
     );
   };
 
+  const ComingSoon = ({ label }: { label: string }) => (
+    <section className="bg-white rounded-2xl shadow p-4 text-sm text-gray-700 text-center">
+      {label} 리포트는 준비 중입니다. 업데이트 후 확인할 수 있어요.
+    </section>
+  );
+
   const renderContent = () => {
     if (activeTab === "tone") {
-      return (
-        <>
-          <section className="bg-white rounded-2xl shadow p-4 space-y-3">
-            <h3 className="text-sm font-semibold text-gray-900">문장 스타일 분석</h3>
-            <div className="h-48">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.style}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="label" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" fill="#816BFF" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <StyleFeedbackCard />
-          </section>
-
-          <section className="bg-white rounded-2xl shadow p-4 space-y-3">
-            <h3 className="text-sm font-semibold text-gray-900">"HOW vs WHAT" 분석</h3>
-            <div className="space-y-2 text-sm">
-              <div className="bg-purple-50 text-purple-700 rounded-lg p-3">
-                <p className="font-semibold">전달 방식 (How)</p>
-                <p className="text-xs mt-1 text-purple-700">{data.howWhat.how}</p>
-              </div>
-              <div className="bg-blue-50 text-blue-700 rounded-lg p-3">
-                <p className="font-semibold">내용 (What)</p>
-                <p className="text-xs mt-1 text-blue-700">{data.howWhat.what}</p>
-              </div>
-              <div className="bg-yellow-50 text-yellow-800 rounded-lg p-3 text-xs">
-                TIP {data.howWhat.tip}
-              </div>
-            </div>
-          </section>
-        </>
-      );
+      return <ComingSoon label="톤·어조" />;
     }
 
     if (activeTab === "style") {
@@ -238,11 +211,13 @@ export default function AnalysisPage() {
             <div className="space-y-2 text-sm">
               <div className="bg-purple-50 text-purple-700 rounded-lg p-3">
                 <p className="font-semibold">전달 방식 (How)</p>
-                <p className="text-xs mt-1 text-purple-700">{data.howWhat.how}</p>
+                <p className="text-xs mt-1 text-purple-700">{data.howWhat.howType}</p>
+                <p className="text-[11px] mt-1 text-purple-700">{data.howWhat.howNote}</p>
               </div>
               <div className="bg-blue-50 text-blue-700 rounded-lg p-3">
                 <p className="font-semibold">내용 (What)</p>
-                <p className="text-xs mt-1 text-blue-700">{data.howWhat.what}</p>
+                <p className="text-xs mt-1 text-blue-700">{data.howWhat.whatType}</p>
+                <p className="text-[11px] mt-1 text-blue-700">{data.howWhat.whatNote}</p>
               </div>
               <div className="bg-yellow-50 text-yellow-800 rounded-lg p-3 text-xs">
                 TIP {data.howWhat.tip}
@@ -254,27 +229,15 @@ export default function AnalysisPage() {
     }
 
     if (activeTab === "emotion") {
-      return (
-        <section className="bg-white rounded-2xl shadow p-4 text-sm text-gray-700">
-          감정 분석은 추후 제공될 예정입니다. 스타일 탭에서 분석 결과를 확인해주세요.
-        </section>
-      );
+      return <ComingSoon label="감정 분석" />;
     }
 
     if (activeTab === "relation") {
-      return (
-        <section className="bg-white rounded-2xl shadow p-4 text-sm text-gray-700">
-          관계 분석 리포트는 준비 중입니다. 업데이트 후 확인할 수 있어요.
-        </section>
-      );
+      return <ComingSoon label="관계 분석" />;
     }
 
     if (activeTab === "ai") {
-      return (
-        <section className="bg-white rounded-2xl shadow p-4 text-sm text-gray-700">
-          AI 미러링 분석은 곧 추가될 예정입니다.
-        </section>
-      );
+      return <ComingSoon label="AI 미러링" />;
     }
 
     return null;
