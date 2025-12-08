@@ -7,6 +7,7 @@ export default function Home() {
   const [messages, setMessages] = useState<any[]>([]);
   const [userName, setUserName] = useState("");
   const [isReady, setIsReady] = useState(false);
+  const [sendCount, setSendCount] = useState(0);
 
   const [input, setInput] = useState("");
   const [hasUploaded, setHasUploaded] = useState(false);
@@ -17,6 +18,8 @@ export default function Home() {
   useEffect(() => {
     const storedName = sessionStorage.getItem("username");
     if (storedName) setUserName(storedName);
+    const storedCount = sessionStorage.getItem("chat_send_count");
+    if (storedCount) setSendCount(Number(storedCount) || 0);
   }, []);
   
 
@@ -132,6 +135,10 @@ ${styleText}
       alert("아직 말투 분석이 완료되지 않았습니다.");
       return;
     }
+
+    const nextCount = sendCount + 1;
+    setSendCount(nextCount);
+    sessionStorage.setItem("chat_send_count", String(nextCount));
 
     const newMessages = [
       ...messages,
