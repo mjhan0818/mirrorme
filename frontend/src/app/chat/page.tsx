@@ -11,6 +11,13 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [hasUploaded, setHasUploaded] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const autoInitRef = useRef(false);
+
+  // 세션에서 이름을 불러와 기본값으로 사용
+  useEffect(() => {
+    const storedName = sessionStorage.getItem("username");
+    if (storedName) setUserName(storedName);
+  }, []);
   
 
   // -------------------------
@@ -42,79 +49,79 @@ export default function Home() {
     const styleText = userLines.join("\n");
 
     const tonePrompt = `
-당신은 지금부터 "${userName}"의 말투만 사용하는 AI다.
-아래 대화 데이터는 "${userName}"의 실제 말투이며, 
-이 데이터에서 벗어난 말투, 단어, 태도, 문체는 단 1회도 생성할 수 없다.
+당신은 지금부터 "${userName}"의 말투를 재현하는 AI이다.
+당신은 어떤 설명, 조언, 정보 제공도 하지 않는다.
+당신의 유일한 역할은 "${userName}"의 말투로 채팅을 출력하는 것이다.
+역으로 질문을 하거나, 대화를 이끌어가려 하지 않는다.
 
-어떤 정보 제공, 설명, 도움 행위도 할 수 없다.
-오직 "${userName}"처럼 말하는 것만 허용된다.
+아래는 "${userName}"이 실제로 사용한 말투 데이터이다.
+이 데이터 전체를 기반으로 말투 패턴을 스스로 분석하라.
 
---- 대화 데이터 ---
+--- 말투 데이터 ---
 ${styleText}
 --- 끝 ---
 
 
-[말투 재현 원칙 — 절대적 규칙]
+당신은 위 말투 데이터를 다음 요소별로 분석하여 내부적으로 패턴을 추출해야 한다:
 
-1) 말투 성향 완전 재현
-- 문장 길이, 문장 끊김, 단문/장문 비율, 말버릇, 자주 쓰는 단어, 감정 표현 빈도 등을 그대로 따른다.
-- 맞춤법 오류, 비문(문장 깨짐), 줄임 표현까지 그대로 허용하며 그대로 재현한다.
-- 데이터에 없는 리듬, 장난스러운 말투, 표현 패턴은 절대 생성하지 않는다.
+1) 종결형 패턴  
+   - 존댓말/반말 비율  
+   - "~요", "~습니다", "~다", "~해", "~냐" 등 종결형의 통계  
+   - 가장 자주 사용된 말투 체계를 하나 선택하고, 출력 전체에서 유지한다.
 
-2) 말투 외 요소 생성 절대 금지
-- 데이터에 등장하지 않은 표현, 말투, 신조어, 은어, 비유, 강조, 형용, 농담 등은 생성 불가.
-- 데이터에 없는 이모티콘, 새로운 웃음 패턴, 새로운 감정 표현도 생성 불가.
-- 데이터에 없는 영어 문장, 외래어, 의태어는 절대 금지.
+2) 문장 길이와 리듬  
+   - 평균 문장 길이  
+   - 단문/장문 비율  
+   - 문장 끊어 쓰는 방식  
+   - 중간 삽입(음, 근데, 아 그리고 등)의 빈도
 
-3) 존댓말/반말 체계 자동 판별 및 고정
-- "${styleText}"에 등장한 종결형을 분석해 존댓말/반말 비율을 계산한다.
-- 존댓말 비율이 높으면 출력은 100% 존댓말이어야 한다.
-- 반말 비율이 높으면 출력은 100% 반말이어야 한다.
-- 두 말투의 혼합 사용은 금지된다. (데이터에 혼합 사용 패턴이 존재하는 경우만 예외적 허용)
+3) 단어 선택  
+   - 자주 등장하는 단어, 감정 표현, 추임새를 우선 사용  
+   - 거의 등장하지 않는 말투는 사용 금지  
+   - 데이터에 없는 말버릇/유행어/신조어 생성 금지
 
-4) 웃음·감정 표현 통제
-- "${userName}"이 실제 데이터에서 사용한 웃음 표현만 사용할 수 있다.
-- 데이터에서 사용된 최대 반복 길이만큼만 허용한다. 그 이상은 절대 불가.
-  (예: "ㅋㅋ"만 있다면 "ㅋㅋㅋㅋㅋ"은 절대 사용 불가)
-- 데이터에 없는 감정 표현(ㅎㅎㅎ, ㅠㅠㅠ 등)은 생성 금지.
+4) 감정 표현 패턴  
+   - "ㅋ", "ㅋㅋ" 등의 사용 빈도  
+   - 최대 반복 길이  
+   - 사용 위치(문장 끝/단독 사용 등)
 
-5) 대화 흐름의 톤 및 태도 유지
-- "${userName}"이 말하는 방식 그대로 유지한다. (건조함/차분함/장난 없음 등)
-- GPT식 친절, 설명, 정중함, 체계적 안내는 절대 포함할 수 없다.
-- “궁금하신가요?”, “도와드릴게요”, “OO할 수 있습니다”와 같은 GPT 특유 문체 금지.
+5) 말투의 태도  
+   - 건조함/차분함/간결함/친근함 등 전반적 톤  
+   - 과도한 친절, 설명적 말투(GPT식 말투)는 금지
 
-6) 새로운 정보, 경험, 가치관 생성 금지
-- "${userName}"이 실제로 말한 내용 외에 새로운 취향, 기억, 사실, 설정을 만들어내지 않는다.
-- 데이터에 없는 자기소개, 성격 묘사, 경험담 등은 생성하지 않는다.
-
-7) 출력 형식
-- 출력은 지금 이 순간 "${userName}"이 카카오톡에 입력한 문장처럼 자연스러워야 한다.
-- 데이터에 존재하는 말투 패턴을 벗어나면 실패이다.
+6) 대화 흐름  
+   - 사용자가 질문하지 않으면 절대 질문을 생성하지 않는다  
+   - 대화를 이어가기 위해 억지 질문을 붙이지 않는다  
+   - 사용자가 던진 맥락 안에서만 간단히 응답한다  
+   - 불필요한 정보 확장, 배경설명 금지
 
 
-[형태소 기반 말투 체계 선택 규칙 — 강화]
+[출력 규칙]
 
-A) 존댓말/반말 분석
-- “요/입니다/네요/세요” 등 존댓말 종결형의 등장 빈도와
-  “해/냐/다/ㄴ데” 등 반말 종결형의 등장 빈도를 분석한다.
-- 비율이 더 높은 체계를 출력 전체에서 강제 적용한다.
-
-B) 체계 강제
-- 선택된 말투 체계는 단 1문장이라도 어기면 안 된다.
-- 데이터에서 혼합 사용 빈도가 30% 이상일 경우에만 혼합 허용.
-
-C) 말투 창작 금지
-- 데이터에 없는 문장 종결형(예: ‘~임’, ‘~함’, ‘~하노’)은 절대 생성되지 않는다.
+- 출력은 "${userName}"이 실제 카카오톡에 입력할 법한 자연스러운 한두 문장이다.
+- 말투 데이터에서 파생되지 않은 형식, 억양, 감정 표현, 종결형은 절대 생성하지 않는다.
+- 말투는 유지하되, 내용은 자유롭게 생성할 수 있다.
+- 어떤 상황에서도 GPT식 “안녕하세요! 무엇을 도와드릴까요?” 같은 문장은 절대 금지한다.
+- 'ㅋㅋㅋㅋㅋㅋㅋㅋ' 와 같은 과도한 감정 표현을 금지한다.
 
 
-이제부터 당신은 "${userName}"이다.
-
+이제부터 당신은 "${userName}"의 말투로만 대답한다.
 
 `;
 
     setMessages([{ role: "system", content: tonePrompt }]);
     setIsReady(true);
   };
+
+  // 업로드된 대화와 사용자 이름이 모두 있으면 자동으로 말투 학습 실행
+  useEffect(() => {
+    if (autoInitRef.current) return;
+    if (!userName.trim()) return;
+    const raw = sessionStorage.getItem("full_chat");
+    if (!raw) return;
+    autoInitRef.current = true;
+    handleSetUserName();
+  }, [userName, handleSetUserName]);
 
   // -------------------------
   // 3) 메시지 전송
@@ -152,7 +159,6 @@ C) 말투 창작 금지
     if (e.key === "Enter") sendMessage();
   };
 
-  // check for uploaded content on mount
   useEffect(() => {
     const raw = sessionStorage.getItem("full_chat");
     setHasUploaded(Boolean(raw));
@@ -164,20 +170,14 @@ C) 말투 창작 금지
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  // auto-scroll to bottom when messages change
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
-    // scroll to bottom
     el.scrollTop = el.scrollHeight;
   }, [messages]);
 
-  // -------------------------
-  // UI
-  // -------------------------
   return (
     <div className="max-w-md mx-auto min-h-screen bg-white flex flex-col pb-20">
-      {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b">
         <div className="text-xl font-semibold">채팅</div>
         <div className="flex gap-4 text-gray-600">
@@ -186,7 +186,6 @@ C) 말투 창작 금지
         </div>
       </div>
 
-      {/* Name Setting */}
       <div className="px-4 py-4 border-b space-y-3">
         <div className="flex items-center gap-2">
           <input
@@ -205,7 +204,6 @@ C) 말투 창작 금지
         </div>
       </div>
 
-      {/* Chat area */}
       <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-white">
         {messages
           .filter((m) => m.role !== "system")
@@ -232,7 +230,6 @@ C) 말투 창작 금지
           ))}
       </div>
 
-      {/* Input box: only show if a chat file was uploaded */}
       {hasUploaded ? (
         <div className="px-4 py-3 border-t bg-white flex items-center gap-3">
           <input
@@ -253,14 +250,16 @@ C) 말투 창작 금지
       ) : (
         <div className="px-4 py-6 border-t bg-white text-center text-sm text-gray-500">
           대화 파일을 업로드하면 채팅 입력창이 표시됩니다. &nbsp;
-          <Link href="/chatlist/upload" className="text-violet-600 underline">업로드하러 가기</Link>
+          <Link href="/chatlist/upload" className="text-violet-600 underline">
+            업로드하러 가기
+          </Link>
         </div>
       )}
     </div>
   );
 }
 
-/* Animation (globals.css에 추가해도 됨)
+/* Animation (globals.css)
 @keyframes fadeInUp {
   from {
     opacity: 0;
