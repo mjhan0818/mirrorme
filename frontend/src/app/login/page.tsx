@@ -4,6 +4,9 @@ import { useRouter } from "next/navigation";
 
 export default function Login() {
   const router = useRouter();
+  const handleSocialClick = () => {
+    alert("해당 기능은 아직 지원되지 않습니다.");
+  };
 
   return (
     <div className="flex flex-col w-full min-h-screen bg-white px-6 py-6">
@@ -29,19 +32,28 @@ export default function Login() {
       <div className="w-full space-y-4">
 
         {/* 카카오 로그인 */}
-        <button className="w-full flex items-center justify-center border border-gray-200 py-3 rounded-full text-gray-700 text-base shadow-sm">
+        <button
+          onClick={handleSocialClick}
+          className="w-full flex items-center justify-center border border-gray-200 py-3 rounded-full text-gray-700 text-base shadow-sm"
+        >
           <img src="/icons/kakao.png" className="w-5 h-5 mr-2" alt="Kakao Logo" />
           카카오로 로그인
         </button>
 
         {/* 네이버 로그인 */}
-        <button className="w-full flex items-center justify-center border border-gray-200 py-3 rounded-full text-gray-700 text-base shadow-sm">
+        <button
+          onClick={handleSocialClick}
+          className="w-full flex items-center justify-center border border-gray-200 py-3 rounded-full text-gray-700 text-base shadow-sm"
+        >
           <img src="/icons/naver.png" className="w-5 h-5 mr-2" alt="Naver Logo" />
           네이버로 로그인
         </button>
 
         {/* Apple 로그인 */}
-        <button className="w-full flex items-center justify-center border border-gray-200 py-3 rounded-full text-gray-700 text-base shadow-sm">
+        <button
+          onClick={handleSocialClick}
+          className="w-full flex items-center justify-center border border-gray-200 py-3 rounded-full text-gray-700 text-base shadow-sm"
+        >
           <img src="/icons/apple.png" className="w-5 h-5 mr-2" alt="Apple Logo" />
           Apple로 로그인
         </button>

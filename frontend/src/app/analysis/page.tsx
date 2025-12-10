@@ -54,6 +54,15 @@ type TabKey = "emotion" | "tone" | "style" | "relation" | "ai";
 
 export default function AnalysisPage() {
   const router = useRouter();
+  const getApiBase = () => {
+    if (typeof window !== "undefined") {
+      return (
+        process.env.NEXT_PUBLIC_API_BASE ||
+        `${window.location.protocol}//${window.location.hostname}:4000`
+      );
+    }
+    return process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000";
+  };
   const [data, setData] = useState<AnalysisData>(defaultData);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +78,7 @@ export default function AnalysisPage() {
 
     const fetchData = async () => {
       try {
-        const res = await fetch("http://localhost:4000/analysis", {
+        const res = await fetch(`${getApiBase()}/analysis`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ text, userName }),

@@ -4,6 +4,16 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 
 export default function Home() {
+  const getApiBase = () => {
+    if (typeof window !== "undefined") {
+      return (
+        process.env.NEXT_PUBLIC_API_BASE ||
+        `${window.location.protocol}//${window.location.hostname}:4000`
+      );
+    }
+    return process.env.NEXT_PUBLIC_API_BASE || "http://localhost:4000";
+  };
+
   const [messages, setMessages] = useState<any[]>([]);
   const [userName, setUserName] = useState("");
   const [isReady, setIsReady] = useState(false);
@@ -148,7 +158,7 @@ ${styleText}
     setMessages(newMessages);
     setInput("");
 
-    const response = await fetch("http://localhost:4000/chat", {
+    const response = await fetch(`${getApiBase()}/chat`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ messages: newMessages }),

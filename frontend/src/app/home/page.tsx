@@ -14,6 +14,9 @@ export default function Home() {
   const [username, setUsername] = useState("");
   const [roleModel, setRoleModel] = useState("");
   const progress = 0;
+  const handleUnsupported = () => {
+    alert("해당 기능은 아직 지원되지 않습니다.");
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -74,7 +77,7 @@ export default function Home() {
             <img src="/images/Chat_mirroring.png" alt="채팅 미러링 모드" className="w-full h-full object-cover" />
           </button>
           <button
-            onClick={() => router.push("/chatlist/upload")}
+            onClick={handleUnsupported}
             className="bg-white rounded-2xl shadow-md overflow-hidden border border-pink-100"
           >
             <img src="/images/Voice_mirroring.png" alt="음성 미러링 모드" className="w-full h-full object-cover" />
@@ -86,7 +89,7 @@ export default function Home() {
         {quickActions.map((action) => (
           <button
             key={action.label}
-            onClick={() => router.push(action.href)}
+            onClick={handleUnsupported}
             className="w-full flex items-center justify-between bg-white rounded-2xl shadow-sm px-4 py-3 border border-violet-100"
           >
             <div className="flex items-center gap-3">
