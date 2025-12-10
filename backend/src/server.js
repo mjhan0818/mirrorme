@@ -108,6 +108,7 @@ JSON 스키마:
   }
 });
 
-app.listen(4000, () => {
-  console.log("Backend running on http://localhost:4000");
+// Bind to all interfaces so external clients can reach the API when the port is open.
+app.listen(4000, "0.0.0.0", () => {
+  console.log("Backend running on http://0.0.0.0:4000");
 });
